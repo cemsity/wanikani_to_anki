@@ -1,0 +1,42 @@
+<div id="card-front">
+  <div id="quest">
+    <div id="quest-display">
+      {{Characters}}
+    </div>
+    <div id="quest-name"></div>
+    <div class="input">
+      {{type:Do_Not_Modify}}
+    </div>
+  </div>
+</div>
+
+<script>
+  var questName = "{{Card}}";
+  if ("{{Object_Type}}" === "Radical") {
+    questName = "Name";
+  }
+
+  var questNameDiv = document.getElementById("quest-name");
+  questNameDiv.innerHTML = "{{Object_Type}} <b>" + questName + "</b>";
+
+  if ("{{Card}}" === "Meaning") {
+    questNameDiv.classList.add("quest");
+  } else if ("{{Card}}" === "Reading") {
+    questNameDiv.classList.add("quest2");
+  }
+
+  var questDisplayDiv = document.getElementById("quest-display");
+
+  if ("{{Object_Type}}" == "Radical") {
+    questDisplayDiv.classList.add("radical");
+  } else if ("{{Object_Type}}" == "Kanji") {
+    questDisplayDiv.classList.add("kanji");
+  } else if ("{{Object_Type}}" == "Vocabulary") {
+    questDisplayDiv.classList.add("vocab");
+  }
+
+  var answerDiv = document.getElementById("typeans");
+  if (answerDiv !== null) {
+    answerDiv.setAttribute("placeholder", "Your Response");
+  }
+</script>

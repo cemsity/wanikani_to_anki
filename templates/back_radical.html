@@ -1,0 +1,239 @@
+{{FrontSide}}
+<hr id="answer">
+  <div id="card-back">
+    <div id="meanings">
+      <h2>Meanings</h2>
+      <p>{{Meaning}}</p>
+    </div>
+
+    <div id="readings">
+      <h2>Readings</h2>
+      <div class="flex-container">
+        <div id="onyomi-readings" class="flex-item">
+          <h3>On'yomi</h3>
+          <p>{{Reading_Onyomi}}</p>
+        </div>
+
+        <div id="kunyomi-readings" class="flex-item">
+          <h3>Kun'yomi</h3>
+          <p>{{Reading_Kunyomi}}</p>
+        </div>
+
+        <div id="nanori-readings" class="flex-item">
+          <h3>Nanori</h3>
+          <p>{{Reading_Nanori}}</p>
+        </div>
+
+        <div id="other-readings" class="flex-item">
+          <p>{{Reading}}</p>
+        </div>
+      </div>
+      <div id="reading-audios">{{Audio}}</div>
+    </div>
+
+    <div id="components">
+      <h2>Components</h2>
+      <div id="component-data" class="flex-container"></div>
+    </div>
+
+    <div id="context-sentences">
+      <h2>Context Sentences</h2>
+    </div>
+
+    <div id="meaning-mnemonic">
+      <h2>Meaning Mnemonic</h2>
+      <p>{{Meaning_Mnemonic}}</p>
+      <p id="meaning-mnemonic-hint" class="mnemonic-hint">{{Meaning_Info}}</p>
+    </div>
+
+    <div id="reading-mnemonic">
+      <h2>Reading Mnemonic</h2>
+      <p>{{Reading_Mnemonic}}</p>
+      <p id="reading-mnemonic-hint" class="mnemonic-hint">{{Reading_Info}}</p>
+    </div>
+  </div>
+
+  <!-- Insert speech type into meanings -->
+  <script>
+    var div = document.getElementById("meanings");
+    if (`{{Speech_Type}}` !== "") {
+      var element = document.createElement("p");
+      element.innerHTML = `<p>Part of Speech: {{Speech_Type}}`;
+      div.appendChild(element);
+    }
+  </script>
+
+  <!-- Add context sentences -->
+  <script>
+    var div = document.getElementById("context-sentences");
+
+    function appendContextSentence(jp, en) {
+      if (jp !== "") {
+        var element = document.createElement("p");
+        element.innerHTML = "<p>" + jp + "</br>" + en + "</p>";
+        div.appendChild(element);
+      }
+    }
+
+    appendContextSentence(`{{Context_jp}}`, `{{Context_en}}`);
+    appendContextSentence(`{{Context_jp_2}}`, `{{Context_en_2}}`);
+    appendContextSentence(`{{Context_jp_3}}`, `{{Context_en_3}}`);
+
+    if (
+      `{{Context_jp}}{{Context_en}}{{Context_jp_2}}{{Context_en_2}}{{Context_jp_3}}{{Context_en_3}}`.trim() ===
+      ""
+    ) {
+      div.style.display = "none";
+    }
+  </script>
+
+  <!-- Hide empty reading sections -->
+  <script>
+    function disable_reading_div(id, readings) {
+      var div = document.getElementById(id);
+      if (readings === "") {
+        div.style.display = "none";
+      } else {
+        div.style.display = "";
+      }
+    }
+
+    disable_reading_div("onyomi-readings", `{{Reading_Onyomi}}`);
+    disable_reading_div("kunyomi-readings", `{{Reading_Kunyomi}}`);
+    disable_reading_div("nanori-readings", `{{Reading_Nanori}}`);
+    disable_reading_div("other-readings", `{{Reading}}`);
+    disable_reading_div(
+      "readings",
+      `{{Reading_Onyomi}}{{Reading_Kunyomi}}{{Reading_Nanori}}{{Reading}}`
+    );
+  </script>
+
+  <!-- Populate components -->
+  <script>
+    var components = `{{Components}}`.split(", ").filter((e) => e !== "");
+    var componentNames = `{{Component_Names}}`
+      .split(", ")
+      .filter((e) => e !== "");
+    var componentTypes = `{{Component_Types}}`
+      .split(", ")
+      .filter((e) => e !== "");
+
+    var componentDataDiv = document.getElementById("component-data");
+
+    for (var i = 0; i < components.length; i++) {
+      var textDiv = document.createElement(componentTypes[i]);
+
+      textDiv.innerHTML = components[i];
+
+      var nameDiv = document.createElement("span");
+      nameDiv.innerHTML = componentNames[i];
+
+      var componentDiv = document.createElement("div");
+      componentDiv.classList.add("component");
+      componentDiv.classList.add("flex-item");
+
+      componentDiv.appendChild(textDiv);
+      componentDiv.appendChild(nameDiv);
+
+      componentDataDiv.appendChild(componentDiv);
+    }
+
+    var componentsDiv = document.getElementById("components");
+    if (components.length > 0) {
+      componentsDiv.style.display = "";
+    } else {
+      componentsDiv.style.display = "none";
+    }
+  </script>
+
+  <!-- Hide empty mnemonics -->
+  <script>
+    function disableDiv(id, mnemonic) {
+      var div = document.getElementById(id);
+      if (mnemonic === "") {
+        div.style.display = "none";
+      } else {
+        div.style.display = "";
+      }
+    }
+
+    var meaningMnemonic = `{{Meaning_Mnemonic}}`;
+    var meaningHint = `{{Meaning_Info}}`;
+    var readingMnemonic = `{{Reading_Mnemonic}}`;
+    var readingHint = `{{Reading_Info}}`;
+
+    disableDiv("meaning-mnemonic", meaningMnemonic);
+    disableDiv("meaning-mnemonic-hint", meaningHint);
+    disableDiv("reading-mnemonic", readingMnemonic);
+    disableDiv("reading-mnemonic-hint", readingHint);
+  </script>
+
+  <!-- Check the answer -->
+  <script>
+    //some addons read the script too early:
+    if (document.getElementById("typeans")) {
+      var typedAnswer = "";
+      var typedAnswer_element = document.getElementById("typeans");
+      if (typedAnswer_element.querySelector(".typegiven")) {
+        // the "typegiven" class exists only on iphone:
+        typedAnswer = typedAnswer_element
+          .querySelector(".typegiven")
+          .querySelector(".typeBad").innerText;
+      } else if (typedAnswer_element.querySelector(".typeBad")) {
+        //for pc and android:
+        typedAnswer = typedAnswer_element.querySelector(".typeBad").innerText;
+      }
+
+      typedAnswerLower = typedAnswer.toLowerCase();
+
+      var meaningWhitelist = `{{Meaning_Whitelist}}`.toLowerCase().split(", ");
+      var meaningBlacklist = `{{Meaning_Blacklist}}`.toLowerCase().split(", ");
+      var readingWhitelist = `{{Reading_Whitelist}}`.toLowerCase().split(", ");
+      var readingBlacklist = `{{Reading_Blacklist}}`.toLowerCase().split(", ");
+
+      var correctAnswers = [];
+      var incorrectAnswers = [];
+      if (`{{Card}}` === "Meaning") {
+        correctAnswers = meaningWhitelist;
+        incorrectAnswers = meaningBlacklist;
+      } else if (`{{Card}}` === "Reading") {
+        correctAnswers = readingWhitelist;
+        incorrectAnswers = readingBlacklist;
+      }
+
+      var answerDiv = document.createElement("div");
+      answerDiv.setAttribute("id", "typeans");
+      answerDiv.innerHTML = typedAnswer;
+      document.getElementById("typeans").replaceWith(answerDiv);
+
+      if (typedAnswerLower === "") {
+        answerDiv.style.display = "none";
+      } else if (incorrectAnswers.includes(typedAnswerLower)) {
+        answerDiv.classList.add("incorrect");
+      } else if (correctAnswers.includes(typedAnswerLower)) {
+        answerDiv.classList.add("correct");
+      } else {
+        answerDiv.classList.add("incorrect");
+      }
+    }
+  </script>
+
+  <!-- Generate tooltips -->
+  <script>
+    function setTooltips(tags, text) {
+      for (var i = 0; i < tags.length; i++) {
+        tags[i].setAttribute("title", text);
+      }
+    }
+
+    var kanji = document.getElementsByTagName("kanji");
+    var radicals = document.getElementsByTagName("radical");
+    var vocab = document.getElementsByTagName("vocab");
+    var reading = document.getElementsByTagName("reading");
+
+    setTooltips(kanji, "kanji");
+    setTooltips(radicals, "radical");
+    setTooltips(vocab, "vocab");
+    setTooltips(reading, "reading");
+  </script>
+<hr id="answer"/>
