@@ -1,3 +1,4 @@
+from datetime import datetime
 from wanikani_api.models import Subject, Meaning, AuxiliaryMeaning, Reading
 from typing import List, Optional
 from dataclasses import dataclass
@@ -5,10 +6,11 @@ import requests
 from requests import Response
 import urllib.parse
 import re
+import html
+from wanikani_to_anki.db import BaseModel
 
 #Constants
 IMAGE_FILE = "image/svg+xml"
-IMAGE_SIZE = "128x128"
 AUDIO_FILE = "audio/mpeg"
 
 @dataclass
@@ -36,6 +38,16 @@ class ReadingData:
     whitelist: str
     blacklist: str
 
+@dataclass
+class Mnemonic:
+    meaning_mnemonic: str
+    meaning_mnemonic_info: Optional[str]
+    reading_mnemonic: Optional[str]
+    reading_mnemonic_info: Optional[str]
+@dataclass
+class Position:
+    level: int
+    lesson_position: int
 
 
 
@@ -43,40 +55,103 @@ class Card():
     wk_id : int
     characters: str
     object_type: str
-    components: Optional[List[int]] 
+    component_ids: Optional[List[int]]
+    components: Optional[List[Components]] 
     meanings: List[Meaning]
     aux_meanings: List[AuxiliaryMeaning] 
     readings: Optional[List[Reading]] 
     part_of_speech: Optional[List[str]]
     context: Optional[List[Context]]
-    meaning_mnemonic: str
-    meaning_mnemonic_info: Optional[str]
-    reading_mnemonic: Optional[str]
-    reading_mnemonic_info: Optional[str]
+    mnemonic: Mnemonic
     audio_url: Optional[List[str]]
     image_url: Optional[List[str]] 
+    position: Position
+    date_created: datetime.datetime
+    date_updated: datetime.datetime
 
-    def __init__(self, subject:Subject ):
-        self.wk_id = subject.id
-        self.characters = subject.characters
-        self.object_type = subject.resource
-        self.components = (None if subject.resource == "radical" else subject.component_subject_ids)
-        self.meanings = subject.meanings
-        self.aux_meanings = subject.auxiliary_meanings
-        self.readings = (None if self._is_radical(subject) else subject.readings) 
-        self.part_of_speech = self._get_part_of_speech(subject)
-        self.context = self._get_context(subject)
-        self.meaning_mnemonic = subject._resource["meaning_mnemonic"]
-        self.meaning_mnemonic_info = (subject._resource["meaning_hint"] if subject.resource == "kanji" else None)
-        self.reading_mnemonic = (None if self._is_radical(subject) else subject._resource["reading_mnemonic"])
-        self.reading_mnemonic_info = (subject._resource["reading_hint"] if subject.resource == 'kanji' else None)
-        self.audio_url = self._get_audio_url(subject)
-        self.image_url = self._get_image_url(subject) #Radicals that do not have a characters
-        self.level = subject.level
-        self.lesson_position = subject._resource["lesson_position"]
+    def __init__(self,
+                wk_id: int,
+                characters: str,
+                object_type: str,
+                component_ids: Optional[List[int]],
+                components: Optional[List[Components]],
+                meanings: List[Meaning],
+                aux_meanings: List[AuxiliaryMeaning],
+                readings: Optional[List[Reading]],
+                part_of_speech: Optional[List[str]],
+                context: Optional[List[Context]],
+                mnemonic: Mnemonic,
+                position: Position,
+                audio_url: Optional[List[str]],
+                image_url: Optional[List[str]],
+                ):
+        self.wk_id = wk_id
+        self.characters = characters
+        self.object_type = object_type
+        self.components_id = component_ids
+        self.components = components
+        self.meanings = meanings
+        self.aux_meanings = aux_meanings
+        self.readings = readings 
+        self.part_of_speech = part_of_speech
+        self.context = context
+        self.mnemonic = mnemonic
+        self.audio_url = audio_url
+        self.image_url = image_url #Radicals that do not have a characters
+        self.position = position
+
+    # def __init__(self, subject:Subject ):
+    #     self.wk_id = subject.id
+    #     self.characters = subject.characters
+    #     self.object_type = subject.resource
+    #     self.components = (None if subject.resource == "radical" else subject.component_subject_ids)
+    #     self.meanings = subject.meanings
+    #     self.aux_meanings = subject.auxiliary_meanings
+    #     self.readings = (None if self._is_radical(subject) else subject.readings) 
+    #     self.part_of_speech = self._get_part_of_speech(subject)
+    #     self.context = self._get_context(subject)
+    #     self.meaning_mnemonic = subject._resource["meaning_mnemonic"]
+    #     self.meaning_mnemonic_info = (subject._resource["meaning_hint"] if subject.resource == "kanji" else None)
+    #     self.reading_mnemonic = (None if self._is_radical(subject) else subject._resource["reading_mnemonic"])
+    #     self.reading_mnemonic_info = (subject._resource["reading_hint"] if subject.resource == 'kanji' else None)
+    #     self.audio_url = self._get_audio_url(subject)
+    #     self.image_url = self._get_image_url(subject) #Radicals that do not have a characters
+    #     self.level = subject.level
+    #     self.lesson_position = subject._resource["lesson_position"]
+    @staticmethod
+    def from_api(subject:Subject):
+
+        mnemonic = Mnemonic(
+                            meaning_mnemonic = subject._resource["meaning_mnemonic"],
+                            meaning_mnemonic_info = (subject._resource["meaning_hint"] if subject.resource == "kanji" else None),
+                            reading_mnemonic = (None if  Card._is_radical(subject) else subject._resource["reading_mnemonic"]),
+                            reading_mnemonic_info = (subject._resource["reading_hint"] if subject.resource == 'kanji' else None),
+        )
+        position = Position(level= subject.level, lesson_position= subject._resource["lesson_position"])
+        return Card(
+            wk_id = subject.id,
+            characters = subject.characters,
+            object_type = subject.resource,
+            component_ids = (None if subject.resource == "radical" else subject.component_subject_ids),
+            components = None, 
+            meanings = subject.meanings,
+            aux_meanings = subject.aux_meanings,
+            readings = (None if Card._is_radical(subject) else subject.readings),
+            part_of_speech = Card._get_part_of_speech(subject),
+            context= Card._get_context(subject),
+            mnemonic = mnemonic,
+
+        )
+
         
+        # self.context = self._get_context(subject)
+        # self.audio_url = self._get_audio_url(subject)
+        # self.image_url = self._get_image_url(subject) #Radicals that do not have a characters
+        # self.level = subject.level
+        # self.lesson_position = subject._resource["lesson_position"]
 
-    def to_anki_note(self, index):
+
+    def to_anki_note(self, index, download=True):
         
         components: Components  = self.get_components()
         meanings: str = self.get_meanings()
@@ -86,35 +161,35 @@ class Card():
         image: str = self.get_image()
 
         out: List[str] = [
-            self.none_to_blank(self.characters), 
-            self.object_type,
-            components.characters,
-            components.names,
-            components.types,
-            meanings,
-            meanings_list.white,
-            meanings_list.black,
-            readings.onyomi,
-            readings.kunyomi,
-            readings.nanori,
-            readings.accepted,
-            readings.whitelist,
-            readings.blacklist,
-            self.none_to_blank(self.part_of_speech),
-            self.context[0].ja,
-            self.context[0].en,
-            self.context[1].ja,
-            self.context[1].en,
-            self.context[2].ja,
-            self.context[2].en,
+            str(self.wk_id),
+            html.escape(self.none_to_blank(self.characters)), 
+            html.escape(self.object_type.capitalize()),
+            html.escape(components.characters),
+            html.escape(components.names),
+            html.escape(components.types),
+            html.escape(meanings),
+            html.escape(meanings_list.white),
+            html.escape(meanings_list.black),
+            html.escape(readings.onyomi),
+            html.escape(readings.kunyomi),
+            html.escape(readings.nanori),
+            html.escape(readings.accepted),
+            html.escape(readings.whitelist),
+            html.escape(readings.blacklist),
+            html.escape(self.none_to_blank(self.part_of_speech)),
+            html.escape(self.context[0].ja),
+            html.escape(self.context[0].en),
+            html.escape(self.context[1].ja),
+            html.escape(self.context[1].en),
+            html.escape(self.context[2].ja),
+            html.escape(self.context[2].en),
             (self.meaning_mnemonic or ""),
             (self.meaning_mnemonic_info or ""),
             (self.reading_mnemonic or ""),
             (self.reading_mnemonic_info or ""),
-            audio,
+            html.escape(audio),
             image,
-            index,
-            self.wk_id, 
+            str(index), 
             "-"
         ]      
         return out 
@@ -122,9 +197,11 @@ class Card():
         return ("" if input == None else input)
 
     def get_image(self) -> str:
-        if self.image_url == None:
+        if self.image_url == None or self.image_url == []:
             return ""
-        return f"[image:{self.get_file(self.image_url[0])}]"
+        if self.characters == "":
+            return ""
+        return f"<img id=\"quest-img\"src={self.get_file(self.image_url[0])}>"
 
     def get_primary_meaning(self) -> str:
         return [meaning.meaning for meaning in self.meanings if meaning.primary == True][0]
@@ -191,38 +268,44 @@ class Card():
                           for meaning in self.aux_meanings 
                           if meaning.type == type])
     
-    def _is_vocab(self, subject):
+    @staticmethod
+    def _is_vocab(subject):
         if (subject.resource == "vocabulary"):
             return True
         return False
-
-    def _is_radical(self,subject):
+    
+    @staticmethod
+    def _is_radical(subject):
         if (subject.resource == "radical"):
             return True
         return False
 
-    def _get_part_of_speech(self, subject):
-        if(self._is_vocab(subject)):
-            return subject.parts_of_speech
+    @staticmethod
+    def _get_part_of_speech(subject):
+        if(Card._is_vocab(subject)):
+            return ", ".join(subject.parts_of_speech)
         return None
     
-    def _get_audio_url(self, subject) -> Optional[List[str]]:
-        if(self._is_vocab(subject)):
+    @staticmethod
+    def _get_audio_url( subject) -> Optional[List[str]]:
+        if(Card._is_vocab(subject)):
             audios = subject._resource["pronunciation_audios"]
             return [audio["url"] for audio in audios if audio['content_type'] == AUDIO_FILE]
         return None
     
-    def _get_image_url(self, subject) -> Optional[List[str]]: 
-        if(self._is_radical(subject)):
+    @staticmethod
+    def _get_image_url(subject) -> Optional[List[str]]: 
+        if(Card._is_radical(subject)):
             images = subject._resource["character_images"]
             return [image["url"] for image in images if image['content_type'] == IMAGE_FILE and image["metadata"]["inline_styles"] == True]
         return None
 
-    def _get_context(self, subject) -> Optional[List[Context]]:
-        if (self._is_vocab(subject)):
+    @staticmethod
+    def _get_context(subject) -> Optional[List[Context]]:
+        if (Card._is_vocab(subject)):
             contexts = subject._resource["context_sentences"]
             return [Context(con["en"],con["ja"]) for con in contexts]
-        return [Context("","") for x in range(3)]
+        return [Context("","") for _ in range(3)]
 
     def _as_small_dict(self):
         return {

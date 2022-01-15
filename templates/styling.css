@@ -1,0 +1,221 @@
+@font-face {
+    font-family: "Hiragino Kaku Gothic Pro W3";
+    src: url("_hirakakyprow3.otf");
+  }
+  
+  :root {
+    --background-color-light: #ededed;
+    --background-color-dark: #a0a0a0;
+  
+    --font-color-dark: #444444;
+    --font-color-light: white;
+  
+    --border-color: darkgray;
+  
+    --shadow-color: darkgray;
+  
+    --kanji-color: #f100a1;
+    --kanji-color-dark: #b30077;
+  
+    --reading-color: #484848;
+    --reading-color-dark: #0a0a0a;
+  
+    --radical-color: #00a0f1;
+    --radical-color-dark: #0077b2;
+  
+    --vocab-color: #9e00ed;
+    --vocab-color-dark: #7600b1;
+  
+    --incorrect-color: #f03;
+    --correct-color: #88cc00;
+  }
+  
+  .card {
+    font-family: arial;
+    color: black;
+    background-color: white;
+    line-height: 1.6;
+    margin: 0px;
+    padding: 0px;
+    border-color: var(--border-color);
+  }
+  
+  #card-front {
+    font-size: 20px;
+    text-align: center;
+    line-height: normal;
+  }
+  
+  #card-back {
+    font-size: 15px;
+    text-align: left;
+    max-width: 80ch;
+    margin: auto;
+    padding: 2%;
+  }
+  
+  kanji {
+    background-color: var(--kanji-color);
+    box-shadow: 2px 2px var(--kanji-color-dark);
+  }
+  
+  reading {
+    background-color: var(--reading-color);
+    box-shadow: 2px 2px var(--reading-color-dark);
+  }
+  
+  radical {
+    background-color: var(--radical-color);
+    box-shadow: 2px 2px var(--radical-color-dark);
+  }
+  
+  vocabulary {
+    background-color: var(--vocab-color);
+    box-shadow: 2px 2px var(--vocab-color-dark);
+  }
+  
+  kanji,
+  reading,
+  radical,
+  vocabulary,
+  .primary-highlight {
+    color: var(--font-color-light);
+    padding: 3px;
+    margin: 0px 2px 0px 0px;
+    border-radius: 4px;
+  }
+  
+  /* front of card */
+  
+  .quest {
+    background-image: linear-gradient(to bottom, #efefef, #e0e0e0);
+    box-shadow: 0px 1px 5px 0px var(--shadow-color);
+    color: black;
+    line-height: 40px;
+  }
+  
+  .quest2 {
+    background-image: linear-gradient(to bottom, #323232, #000000);
+    color: white;
+    line-height: 40px;
+  }
+  
+  #typeans {
+    box-shadow: 0px 2px 3px 0px var(--shadow-color);
+    line-height: 40px;
+    text-align: center;
+    height: 40px;
+    border: 0;
+    outline-style: none;
+    font-family: arial;
+    margin: 0px;
+  }
+  
+  /* back of card */
+  
+  #card-back h2 {
+    border-bottom: 1px solid;
+  }
+  
+  .correct {
+    background: var(--correct-color);
+    color: var(--font-color-light);
+  }
+  
+  .incorrect {
+    background: var(--incorrect-color);
+    color: var(--font-color-light);
+  }
+  
+  #meanings p {
+    font-weight: bold;
+  }
+  
+  #reading-audios {
+    text-align: center;
+  }
+  
+  #components {
+    display: inline;
+  }
+  
+  #components:empty {
+    display: none;
+  }
+  
+  .component radical,
+  .component kanji,
+  .component vocabulary {
+    font-size: 30px;
+    margin: 5px;
+  }
+  
+  .component span {
+    font-size: 20px;
+    margin: 5px;
+  }
+  
+  .flex-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+  }
+  
+  .flex-item {
+    flex-direction: column;
+  }
+  
+  .mnemonic-hint {
+    font-style: italic;
+    background-color: var(--background-color-dark);
+    margin: 1% 0;
+    padding: 2%;
+  }
+  
+  .radical {
+    font-family: "Hiragino Kaku Gothic Pro W3";
+    font-size: 100px;
+    color: var(--font-color-light);
+    background-color: var(--radical-color);
+  }
+  
+  .kanji {
+    font-family: "Hiragino Kaku Gothic Pro W3";
+    font-size: 180px;
+    color: var(--font-color-light);
+    background-color: var(--kanji-color);
+  }
+  
+  .vocab {
+    font-family: "Hiragino Kaku Gothic Pro W3";
+    font-size: 150px;
+    color: var(--font-color-light);
+    background-color: var(--vocab-color);
+  }
+  
+  .hiragana {
+    font-family: "Hiragino Kaku Gothic Pro W3";
+    font-size: 25 px;
+  }
+  
+  .text {
+    font-family: "Ubuntu Light", "HelveticaNeueLT Std Lt";
+    font-style: "italics";
+  }
+  
+  .radicon {
+    color: var(--font-color-light);
+    font-size: 100px;
+  }
+  
+  #fixed-bottom {
+    position: fixed;
+    bottom: 0px;
+    float: left;
+  }
+  #quest-img {
+    height: 100px;
+    filter: invert(100%); 
+  }
+  
