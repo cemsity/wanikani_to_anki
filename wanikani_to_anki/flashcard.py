@@ -1,3 +1,4 @@
+from copy import Error
 from datetime import datetime
 from wanikani_api.models import Subject, Meaning, AuxiliaryMeaning, Reading
 from typing import List, Optional
@@ -7,7 +8,9 @@ from requests import Response
 import urllib.parse
 import re
 import html
-from wanikani_to_anki.db import BaseModel
+import wanikani_to_anki.FlashcardDB as FDB
+from  wanikani_to_anki.db import sqlite_db as db
+
 
 #Constants
 IMAGE_FILE = "image/svg+xml"
@@ -41,9 +44,24 @@ class ReadingData:
 @dataclass
 class Mnemonic:
     meaning_mnemonic: str
-    meaning_mnemonic_info: Optional[str]
-    reading_mnemonic: Optional[str]
-    reading_mnemonic_info: Optional[str]
+    meaning_mnemonic_info: str
+    reading_mnemonic:str
+    reading_mnemonic_info: str
+
+    def __init__(self, meaning_mem, meaning_mnemonic_info, reading_mnemonic, reading_mnemonic_info):
+        self.meaning_mnemonic = meaning_mem
+        self.meaning_mnemonic_info = meaning_mnemonic_info,
+        self.reading_mnemonic = reading_mnemonic,
+        self.reading_mnemonic_info = reading_mnemonic_info
+    
+    @staticmethod
+    def from_api(subject:Subject):
+        return Mnemonic(
+            meaning_mnemonic = subject._resource["meaning_mnemonic"],
+            meaning_mnemonic_info = (subject._resource["meaning_hint"] if subject.resource == "kanji" else None),
+            reading_mnemonic = (None if  Card._is_radical(subject) else subject._resource["reading_mnemonic"]),
+            reading_mnemonic_info = (subject._resource["reading_hint"] if subject.resource == 'kanji' else None),
+        )
 @dataclass
 class Position:
     level: int
@@ -84,6 +102,8 @@ class Card():
                 position: Position,
                 audio_url: Optional[List[str]],
                 image_url: Optional[List[str]],
+                date_created: datetime,
+                date_updated: datetime,
                 ):
         self.wk_id = wk_id
         self.characters = characters
@@ -99,6 +119,8 @@ class Card():
         self.audio_url = audio_url
         self.image_url = image_url #Radicals that do not have a characters
         self.position = position
+        self.date_created= date_created
+        self.date_updated= date_updated
 
     # def __init__(self, subject:Subject ):
     #     self.wk_id = subject.id
@@ -128,6 +150,7 @@ class Card():
                             reading_mnemonic_info = (subject._resource["reading_hint"] if subject.resource == 'kanji' else None),
         )
         position = Position(level= subject.level, lesson_position= subject._resource["lesson_position"])
+        
         return Card(
             wk_id = subject.id,
             characters = subject.characters,
@@ -138,17 +161,22 @@ class Card():
             aux_meanings = subject.aux_meanings,
             readings = (None if Card._is_radical(subject) else subject.readings),
             part_of_speech = Card._get_part_of_speech(subject),
-            context= Card._get_context(subject),
+            context = Card._get_context(subject),
             mnemonic = mnemonic,
-
+            audio_url = Card._get_audio_url(subject),
+            image_url = Card._get_audio_url(subject),
+            position = position,
+            date_created = datetime.now(),
+            date_updated = datetime.now(),
         )
 
+    @staticmethod
+    def from_db():
+        """
+        Return Card type from the database. 
+        """
         
-        # self.context = self._get_context(subject)
-        # self.audio_url = self._get_audio_url(subject)
-        # self.image_url = self._get_image_url(subject) #Radicals that do not have a characters
-        # self.level = subject.level
-        # self.lesson_position = subject._resource["lesson_position"]
+        pass
 
 
     def to_anki_note(self, index, download=True):
@@ -193,8 +221,24 @@ class Card():
             "-"
         ]      
         return out 
+
+    def save(self):
+        try:
+            with db.atomic():
+                subject = FDB.Subject.create(
+                    wk_id = self.wk_id,
+                    characters = self.get_characters(),
+                    object_type = self.object_type,
+                    meaning_mnemonic = self.mnemonic.meaning_mnemonic
+
+                    )
+        except Error as e:
+            print(e)
     def none_to_blank(self, input: str) -> str:
         return ("" if input == None else input)
+
+    def get_characters(self) -> str:
+        return self.none_to_blank(self.characters)
 
     def get_image(self) -> str:
         if self.image_url == None or self.image_url == []:
@@ -277,6 +321,12 @@ class Card():
     @staticmethod
     def _is_radical(subject):
         if (subject.resource == "radical"):
+            return True
+        return False
+    
+    @staticmethod
+    def _is_kanji(subject):
+        if (subject.resource == "kanji"):
             return True
         return False
 

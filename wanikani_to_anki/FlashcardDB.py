@@ -3,6 +3,9 @@ from wanikani_to_anki.db import BaseModel
 
 
 class Subject(BaseModel):
+    """
+    Subject Model for anki.
+    """
     wk_id = IntegerField(primary_key=True)
     characters = CharField()
     object_type = CharField()
@@ -15,18 +18,18 @@ class Subject(BaseModel):
     date_created = DateTimeField()
     date_updated = DateTimeField()
     
-class Meanings(BaseModel):
+class Meaning(BaseModel):
     meaning = CharField()
     accepted_answer = BooleanField()
     primary = BooleanField()
     type = CharField()
     subject = ForeignKeyField(Subject, backref="meaning")
 
-class Components(BaseModel):
+class Component(BaseModel):
     main = ForeignKeyField(Subject)
     sub = ForeignKeyField(Subject, backref="components")
 
-class Readings(BaseModel):
+class Reading(BaseModel):
     type = CharField()
     primary = BooleanField()
     reading = CharField()
