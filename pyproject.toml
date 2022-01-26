@@ -10,9 +10,11 @@ genanki = "^0.13.0"
 wanikani-api = "^0.5.1"
 chardet = "^4.0.0"
 peewee = "^3.14.8"
+httpx = "^0.21.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+mypy = "^0.931"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

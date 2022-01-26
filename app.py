@@ -1,94 +1,68 @@
-import html
-from typing import OrderedDict
 import genanki
 from wanikani_api.client import Client
-from typing import List, Optional
+from typing import List
 from dataclasses import dataclass
 from wanikani_to_anki.MyNote import MyNote
-from wanikani_to_anki.flashcard import Card
+from wanikani_to_anki.Card import Card
+from wanikani_to_anki.Factory import Factory
 from wanikani_to_anki.model import wanikani_model
 import glob
-from  wanikani_to_anki.db import sqlite_db as db
-from wanikani_to_anki.FlashcardDB import Subject, Meanings, Components, Readings, PartOfSpeech, Context, Audio, Image
-import json
+import os
+import asyncio
 
 DECK_ID = 1854033380
 
-def main():
-    v2_api_key = "0633ea52-d04e-4f1c-8767-f6acef3b6aad"
+
+async def main():
+    v2_api_key = get_api_key()
     client = Client(v2_api_key)
-    # user_information = client.user_information()
-    # print(user_information.preferences)
-    # all_radicals = client.subjects(levels=[1])
-    # print(len(all_radicals))
     index = 1
     my_deck = genanki.Deck(
-        DECK_ID, "Wanikani Test"
+        DECK_ID, "Wanikani3 - This time its updatable"
     )
-    
-    for i in range(60):
-        level_subjects = client.subjects(levels=i, types=["radical"])
+    factory = Factory("media.pkl")
+    wani_card = factory.new_card()
+    for i in range(1,11):
+        print(f"Lesson: {i}")
+        level_subjects = client.subjects(levels=i)
         cards: List[Card] = []
         for subject in level_subjects:
-            card = Card(subject)
+            card = wani_card.from_api(subject)
             cards.append(card)
         cards.sort(key=Card.sort())
-        for card in cards:
-            new_card = card.to_anki_note(index)
+        coros = [card.to_anki_note(index+i) for i, card in enumerate(cards)]
+        res_cards = await asyncio.gather(*coros)
+        
+        for card in res_cards:
+            
             new_note = MyNote(model = wanikani_model,
-                              fields= new_card,
-                              tags=[f"Lesson_{i}",f"{card.object_type.lower()}"])
+                              fields= card,
+                              tags=[f"Lesson_{i}",f"{card[2]}"],
+                              due=index)
             index += 1
             my_deck.add_note(new_note)
-            print(new_card)
+        factory.save_store()
     
     my_package = genanki.Package(my_deck)
     my_package.media_files = get_media_from_file("./files/*")
-    my_package.write_to_file("test.apkg")
+    my_package.write_to_file("wanikani3.apkg")
 
     return 0
-def get_radicals():
-    v2_api_key = "0633ea52-d04e-4f1c-8767-f6acef3b6aad"
-    client = Client(v2_api_key)
-    # user_information = client.user_information()
-    # print(user_information.preferences)
-    # all_radicals = client.subjects(levels=[1])
-    # print(len(all_radicals))
-    index = 1
-    my_deck = genanki.Deck(
-        DECK_ID, "Wanikani Test"
-    )
-    level_subjects = client.subjects( types=["radical"])
-    cards: List[Card] = []
-    for subject in level_subjects:
-        card = Card(subject)
-        cards.append(card)
-    cards.sort(key=Card.sort())
-    for card in cards:
-        new_card = card.to_anki_note(index)
-        new_note = MyNote(model = wanikani_model,
-                            fields= new_card,
-                            tags=[f"Lesson_{card.level}",f"{card.object_type.lower()}"])
-        index += 1
-        my_deck.add_note(new_note)
-        print(new_card)
-
-    my_package = genanki.Package(my_deck)
-    my_package.media_files = get_media_from_file("./files/*")
-    my_package.write_to_file("test.apkg")
 
 def get_media_from_file(path):
     return glob.glob(path)
 
-def test():
-    v2_api_key = "0633ea52-d04e-4f1c-8767-f6acef3b6aad"
-    client = Client(v2_api_key)
-    user_information = client.user_information()
-    print(user_information) 
 
-def test_db():
-    
+def dump_pickle():
+    from wanikani_to_anki.FileStore import FileStore
+    file_store = FileStore.load('media.pkl')
+    file_store.dump("dump.txt")
+
+def get_api_key():
+    return os.environ.get("WANIKANI_API")
+
 if __name__ == '__main__':
-    test_db()
+    asyncio.run(main())
+    dump_pickle()
 
 
