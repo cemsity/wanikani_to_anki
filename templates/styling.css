@@ -118,12 +118,12 @@
   }
   
   .correct {
-    background: var(--correct-color);
+    background: var(--correct-color) !important;
     color: var(--font-color-light);
   }
   
   .incorrect {
-    background: var(--incorrect-color);
+    background: var(--incorrect-color) !important;
     color: var(--font-color-light);
   }
   
